@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BART Station Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- css styling -->
+  <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <!-- polyfill.io is the library for using newer JavaScript features (such as Object.assign) in older browsers. -->
+  <script src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- Icons -->
+  <link rel="stylesheet" type="text/css" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+  <link rel="stylesheet" href="{{url_for('static', filename='css/leaflet.extra-markers.min.css')}}">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Sanchez" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 p-4 text-center">
+        <div class="header">
+          <h1><b>BART Station Map</b></h1>
+        </div>
+        <div class="image-container">
+          <img src="{{url_for('static',filename='img/barttrain.jpeg') }}" alt="BART Train Image">
+        </div>
+      </div>
+      <div class="col-md-12 p-2 text-center">
+        <h6>Discover safety information including: available elevators, delays, and past crime reports.</h6>
+      </div>
+    </div>
+    <div class="row pb-3 justify-content-md-center">
+      <div class="col-md-3 text-right">
+        <h5>Select a Station:</h5>
+      </div>
+      <select id='selDataset'>
+      </select>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card text-white bg-info mb-3">
+          <div class="card-header">Advisory Chart</div>
+          <div class="card-body">
+            <div id="pie"></div>
+          </div>
+        </div>
+        <br>
+        <div class="card text-white bg-success mb-3">
+          <div class="card-header">Crime Occurances at selected BART Station (2021)</div>
+          <div class="card-body">
+            <div id="bar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 p-2">
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MomentJS -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+  <!-- Leaflet JavaScript code -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- leaflet.extra-markers -->
+  <script src="{{url_for('static', filename='javascript/leaflet.extra-markers.min.js')}}"></script>
+  <!-- d3 sources -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+
+  <script>
+    var select_menu = d3.select('#selDataset')
+
+    // Function to update the bar chart
+    function updateBarChart(station_id) {
+    fetch(`/api/v1.0/crime_count_${station_id}`)
+        .then(response => response.json())
+        .then(data => {
+            updateCrime(data);
+        })}
+
+    d3.json('./api/v1.0/stations').then(function (response) {
+      for (let i = 0; i < response.length; i++) {
+        select_menu.append('option')
+          .text(response[i]['Name'])
+          .property('value', response[i]['ID'])
+      }
+
+      select_menu.on('change', () => {
+        const station_id = select_menu.property('value')
+        const station = response.find(station => station['ID'] == station_id)
+        window.BartStationMap.setView([station['Latitude'], station['Longitude']], 14);
+
+        // Update the bar chart with data for the selected station
+        updateBarChart(station_id);
+      });
+    })
+  </script>
+  <!-- javascript for bart map -->
+  <script src="{{url_for('static', filename='javascript/bart_map.js')}}"></script>
+  <script src="{{url_for('static', filename='javascript/advisories.js')}}"></script>
+  <script src="{{url_for('static', filename='javascript/crime_bar.js')}}"></script>
+</body>
+
+</html>
